@@ -1,3 +1,7 @@
+<div align="left">
+ <img src="docs/_static/img/dwdi_light_logo.png#gh-light-mode-only" width="400px">
+</div>
+
 Welcome to the GitHub repository of the Data Warehouse and Data Intelligence
 (DWDI) group.
 
