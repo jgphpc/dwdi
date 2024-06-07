@@ -1,0 +1,56 @@
+#!/bin/bash
+
+: ${TAG="prealps"};
+## fc00:0:100:10::2
+
+: ${ODIR="/sysbackup/prealps/dwdi/$TAG"};
+: ${HMEC="hmeventconsumer"}
+
+mkdir -p ${ODIR};
+cp $HMEC ${ODIR}/hmeventconsumer.${TAG}
+HMCONSUME="${ODIR}/hmeventconsumer.${TAG}";
+
+
+rm my_sc_list;
+rm my_cc_list;
+for CAB in x1100 x1101 x1102 x1103 x1104 x1105 x1200 x1201 x1202 x1203 x1204 x1205 x1300 x1301 x1302 x1303 x1304 x1305 x1400 x1401 x1402 x1403 x1404 x1405
+do
+	echo "CAB=$CAB";
+	### nC
+	rm -rf my_nc_list.${CAB};
+	# XXX=$(NODE_FILTER=${CAB} smp -a nC_LIST)
+	XXX=$(hostlist -e ${CAB}c[0-7]r[1,3,5,7]b0 -s ' ')
+	for xxx in $XXX
+	do
+		echo $xxx >> my_nc_list.${CAB};
+	done;
+	wc my_nc_list.${CAB};
+
+	### sC
+	# XXX=$(SLOT_FILTER=${CAB} smp -a sC_LIST);
+	hostlist -e ${CAB}c[0-7]s[0-6]b[0-1] | grep -v x1100c3s1b1 | grep -v x1100c5s5b1 > my_sc_list;
+
+	### cC
+	# XXX=$(ENCL_FILTER=${CAB} smp -a cC_LIST);
+	XXX=$(hostlist -e ${CAB}c[0-7]b0 -s ' ')
+	for xxx in $XXX
+	do
+		echo $xxx >> my_cc_list;
+	done;
+
+
+	nohup $HMCONSUME -verbose -query-metadata -bmcs-file=my_nc_list.${CAB} -dev-sub-registry-prefixes=CrayTelemetry \
+		-allow-failures -dev-format=CSV -compress > ${ODIR}/RF_CrayTelemetry.${TAG}.${CAB} 2> ${ODIR}/RF_CrayTelemetry.${TAG}.${CAB}.eout &
+
+done
+
+wc my_sc_list;
+nohup $HMCONSUME -verbose -bmcs-file=my_sc_list -dev-sub-registry-prefixes=CrayTelemetry \
+	-dev-format=CSV -compress > ${ODIR}/RF_CrayTelemetry.${TAG}.SC 2> ${ODIR}/RF_CrayTelemetry.${TAG}.SC.eout &
+
+
+wc my_cc_list;
+nohup $HMCONSUME -verbose -bmcs-file=my_cc_list  -dev-sub-registry-prefixes=CrayTelemetry \
+	-dev-format=CSV -compress > ${ODIR}/RF_CrayTelemetry.${TAG}.CC  2> ${ODIR}/RF_CrayTelemetry.${TAG}.CC.eout &
+
+ps -ef | grep $HMCONSUME

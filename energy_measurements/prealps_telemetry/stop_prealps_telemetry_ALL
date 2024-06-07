@@ -1,0 +1,38 @@
+#!/bin/bash
+
+if killall -2 /sysbackup/prealps/dwdi/prealps/hmeventconsumer.prealps ; then
+    echo "hmeventconsumer kill OK"
+else
+    echo "hmeventconsumer kill FAILED";
+    exit 1;
+fi
+
+sleep 3
+
+if zcat /sysbackup/prealps/dwdi/prealps/RF_CrayTelemetry.prealps.CC > /sysbackup/prealps/dwdi/results/dwdi.csv; then
+    echo "zless OK"
+else
+    echo "zless FAILED";
+    exit 1;
+fi
+
+if sed -i '1d' /sysbackup/prealps/dwdi/results/dwdi.csv && sed -i '$ d' /sysbackup/prealps/dwdi/results/dwdi.csv; then
+    echo "sed OK"
+else
+    echo "sed FAILED";
+    exit 1;
+fi
+
+if cat /sysbackup/prealps/dwdi/results/dwdi.csv | grep 'InputPower' > /sysbackup/prealps/dwdi/results/dwdi_tmp.csv;  then
+    echo "grep OK"
+else
+    echo "grep FAILED";
+    exit 1;
+fi
+
+if mv /sysbackup/prealps/dwdi/results/dwdi_tmp.csv /sysbackup/prealps/dwdi/results/ALL_cabinets_final_data.$(date -d "today" +"%Y%m%d%H%M").dwdi.csv; then
+    echo "mv OK"
+else
+    echo "mv FAILED";
+    exit 1;
+fi
